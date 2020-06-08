@@ -40,12 +40,12 @@ class TravelTime:
 
     def update_label(self) -> None:
         """Update the application display."""
-        if self.is_work_hours():
-            self._update_label_message(0, True)
+        if not self.is_work_hours():
+            self._update_label_text(0, False)
         else:
             expected_time, actual_time = self.travel_time_google()
             self._update_label_color(expected_time, actual_time)
-            self._update_label_message(actual_time)
+            self._update_label_text(actual_time)
 
         # Schedule the next execution of this method
         self.root.after(1000 * 60 * 5, self.update_label)
@@ -60,7 +60,7 @@ class TravelTime:
         elif traffic_error > 0.5:
             self.label_time.config(fg="red")
 
-    def _update_label_message(self, actual_time: int, work_hours: bool = False) -> None:
+    def _update_label_text(self, actual_time: int, work_hours: bool = True) -> None:
         """Display the current travel time, or a work-life balance message!"""
         if not work_hours:
             self.label_message.config(fg="red")
@@ -72,10 +72,20 @@ class TravelTime:
             travel_time = time.gmtime(actual_time)
             hours = travel_time.tm_hour
             minutes = travel_time.tm_min
-            if hours > 0:
-                self.time.set(f"{hours} hours {minutes} minutes")  # type: ignore
-            else:
-                self.time.set(f"{minutes} minutes")  # type: ignore
+
+            hours_string = f"{hours} hour" if hours > 0 else ""
+            hours_plural = "s" if hours > 1 else ""
+            minutes_string = f"{minutes} minute" if minutes > 0 else ""
+            minutes_plural = "s" if minutes > 1 else ""
+            separator = " " if hours > 0 and minutes > 0 else ""
+            time_string = (
+                hours_string
+                + hours_plural
+                + separator
+                + minutes_string
+                + minutes_plural
+            )
+            self.time.set(time_string)  # type: ignore
 
     def travel_time_google(self) -> Tuple[int, int]:
         """Gets travel time from Google Maps. Requires a Google Cloud Platform API key,
